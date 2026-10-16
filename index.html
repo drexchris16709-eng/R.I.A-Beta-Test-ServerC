@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>R.I.A Under Maintenance</title>
-    <link rel="icon" type="image/png"href="Logo.jpg">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -87,18 +86,6 @@
         .is-in #featureTitle { animation: textRise .4s ease-out .08s both; }
         .is-in #featureDesc  { animation: textRise .4s ease-out .16s both; }
 
-        /* Auto-advance progress bar */
-        #progress {
-            position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
-            background: linear-gradient(90deg, #34d399, #ffffff);
-            transform-origin: left center;
-            transform: scaleX(0);
-        }
-        @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        #progress.run { animation: fill var(--autoplay, 5s) linear forwards; }
-        #featureBox:hover #progress.run,
-        #featureBox:focus-within #progress.run { animation-play-state: paused; }
-
         /* Dots */
         .dot {
             height: 6px; width: 6px; border-radius: 9999px;
@@ -112,7 +99,6 @@
         @media (prefers-reduced-motion: reduce) {
             .animate-pulse { animation: none; }
             .is-out, .is-in, .is-in #featureIcon, .is-in #featureTitle, .is-in #featureDesc { animation: none !important; }
-            #progress { display: none; }
             .dot { transition: none; }
         }
     </style>
@@ -194,11 +180,10 @@
                             <i class="fa-solid fa-desktop"></i>
                         </div>
                         <div class="min-w-0">
-                            <h3 id="featureTitle" class="text-sm font-semibold text-white">Interface & Feature Optimization</h3>
+                            <h3 id="featureTitle" class="text-sm font-semibold text-white">Interface Optimization</h3>
                             <p id="featureDesc" class="text-xs sm:text-[13px] text-neutral-400 mt-0.5 leading-relaxed">Sophisticated, high-contrast user interface engineered for enhanced clarity, navigation, and visual precision.</p>
                         </div>
                     </div>
-                    <div id="progress"></div>
                 </div>
             </div>
 
@@ -218,7 +203,7 @@
     <script>
 const features = [
     {
-        title: "Interface & Feature Optimization",
+        title: "Interface Optimization",
         desc: "Sophisticated, high-contrast user interface engineered for enhanced clarity, navigation, and visual precision.",
         icon: "fa-desktop"
     },
@@ -242,7 +227,6 @@ let isAnimating = false;
 let autoTimer = null;
 
 const content = document.getElementById('featureContent');
-const progress = document.getElementById('progress');
 const dotsWrap = document.getElementById('dots');
 const box = document.getElementById('featureBox');
 
@@ -261,13 +245,24 @@ function renderFeature() {
     [...dotsWrap.children].forEach((d, i) => d.classList.toggle('active', i === currentFeatureIndex));
 }
 
+// Lock the slide box to the tallest slide so the modal never changes size
+function lockFeatureHeight() {
+    box.style.minHeight = '';
+    const saved = currentFeatureIndex;
+    let max = 0;
+    features.forEach((_, i) => {
+        currentFeatureIndex = i;
+        renderFeature();
+        max = Math.max(max, box.offsetHeight);
+    });
+    currentFeatureIndex = saved;
+    renderFeature();
+    box.style.minHeight = max + 'px';
+}
+
 function restartProgress() {
     clearTimeout(autoTimer);
-    progress.classList.remove('run');
     if (reduceMotion) return;
-    void progress.offsetWidth; // restart the CSS animation
-    progress.style.setProperty('--autoplay', AUTOPLAY_MS + 'ms');
-    progress.classList.add('run');
     autoTimer = setTimeout(() => goTo(currentFeatureIndex + 1, 1, true), AUTOPLAY_MS);
 }
 
@@ -354,8 +349,12 @@ window.addEventListener('resize', fitToViewport);
 window.addEventListener('orientationchange', fitToViewport);
 window.addEventListener('load', fitToViewport);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitToViewport);
-if ('ResizeObserver' in window) new ResizeObserver(fitToViewport).observe(card);
-fitToViewport();
+function relayout() { lockFeatureHeight(); fitToViewport(); }
+window.addEventListener('resize', relayout);
+window.addEventListener('orientationchange', relayout);
+window.addEventListener('load', relayout);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+relayout();
 
 // Target Date: November 11, 2026 00:00:00 Philippine Standard Time (UTC+8)
 const targetDatePH = new Date("2026-11-11T00:00:00+08:00").getTime();
